@@ -1,1 +1,330 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
 
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>تحلیلگر نام</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #result {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .card {
+            background: #f8fafc;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+        }
+
+        .letters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .letter {
+            background: #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .error {
+            color: #dc2626;
+            margin-top: 15px;
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>تحلیلگر نام</h1>
+
+    <div class="input-group">
+
+        <input
+            type="text"
+            id="nameInput"
+            placeholder="نام خود را وارد کنید"
+        >
+
+        <button onclick="analyzeName()">
+            تحلیل
+        </button>
+
+    </div>
+
+    <div id="error" class="error"></div>
+
+
+    <div id="result">
+
+        <div class="card">
+            <strong>نام:</strong>
+            <span id="name"></span>
+        </div>
+
+        <div class="card">
+            <strong>تعداد کل حروف:</strong>
+            <span id="totalLetters"></span>
+        </div>
+
+        <div class="card">
+            <strong>حروف منحصربه‌فرد:</strong>
+            <span id="uniqueLetters"></span>
+        </div>
+
+        <div class="card">
+            <strong>حروف صدادار:</strong>
+            <span id="vowels"></span>
+        </div>
+
+        <div class="card">
+            <strong>حروف بی‌صدا:</strong>
+            <span id="consonants"></span>
+        </div>
+
+        <div class="card">
+            <strong>پرتکرارترین حرف:</strong>
+            <span id="mostCommon"></span>
+        </div>
+
+        <div class="card">
+            <strong>پالیندروم:</strong>
+            <span id="palindrome"></span>
+        </div>
+
+        <div class="card">
+            <strong>نام برعکس:</strong>
+            <span id="reversedName"></span>
+        </div>
+
+        <div class="card">
+
+            <strong>
+                تعداد تکرار هر حرف:
+            </strong>
+
+            <div
+                id="letterCounts"
+                class="letters">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+async function analyzeName() {
+
+    const input =
+        document.getElementById("nameInput");
+
+    const name =
+        input.value.trim();
+
+    const error =
+        document.getElementById("error");
+
+    const result =
+        document.getElementById("result");
+
+
+    error.textContent = "";
+
+    result.style.display = "none";
+
+
+    if (!name) {
+
+        error.textContent =
+            "لطفاً نام خود را وارد کنید.";
+
+        return;
+    }
+
+
+    try {
+
+        const response = await fetch(
+            "/analyze",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    name: name
+                })
+            }
+        );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            error.textContent =
+                data.error ||
+                "خطایی رخ داد.";
+
+            return;
+        }
+
+
+        document.getElementById("name")
+            .textContent = data.name;
+
+
+        document.getElementById("totalLetters")
+            .textContent = data.total_letters;
+
+
+        document.getElementById("uniqueLetters")
+            .textContent = data.unique_letters;
+
+
+        document.getElementById("vowels")
+            .textContent = data.vowels;
+
+
+        document.getElementById("consonants")
+            .textContent = data.consonants;
+
+
+        document.getElementById("mostCommon")
+            .textContent =
+                data.most_common_letters.join("، ")
+                + " ("
+                + data.most_common_count
+                + " بار)";
+
+
+        document.getElementById("palindrome")
+            .textContent =
+                data.is_palindrome
+                    ? "بله"
+                    : "خیر";
+
+
+        document.getElementById("reversedName")
+            .textContent =
+                data.reversed_name;
+
+
+        const letterCounts =
+            document.getElementById(
+                "letterCounts"
+            );
+
+
+        letterCounts.innerHTML = "";
+
+
+        for (
+            const [letter, count]
+            of Object.entries(data.letter_counts)
+        ) {
+
+            const element =
+                document.createElement("div");
+
+            element.className = "letter";
+
+            element.textContent =
+                `${letter}: ${count}`;
+
+            letterCounts.appendChild(element);
+        }
+
+
+        result.style.display = "block";
+
+    }
+
+    catch (err) {
+
+        error.textContent =
+            "ارتباط با سرور برقرار نشد.";
+
+        console.error(err);
+    }
+}
+
+</script>
+
+</body>
+
+</html>
